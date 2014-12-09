@@ -9,4 +9,12 @@ categories:   [Media]
 languages:    [Java]
 solutions:    [Mobile]
 github:       android-MediaBrowserService
+level:        ADVANCED
+icon:         screenshots/icon-web.png
+apiRefs:
+    - android:android.service.media.MediaBrowserService
+    - android:android.media.browse.MediaBrowser
+    - android:android.media.session.MediaSession
+    - android:android.media.session.MediaController
+    - android:android.app.Notification.MediaStyle
 license: apache2
