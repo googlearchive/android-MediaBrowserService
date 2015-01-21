@@ -43,7 +43,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class MusicProvider {
 
-    private static final String TAG = "MusicProvider";
+    private static final String TAG = LogHelper.makeLogTag(MusicProvider.class.getSimpleName());
 
     private static final String CATALOG_URL = "http://storage.googleapis.com/automotive-media/music.json";
 

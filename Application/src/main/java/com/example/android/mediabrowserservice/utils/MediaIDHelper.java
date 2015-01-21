@@ -23,7 +23,7 @@ import android.media.MediaMetadata;
  */
 public class MediaIDHelper {
 
-    private static final String TAG = "MediaIDHelper";
+    private static final String TAG = LogHelper.makeLogTag(MediaIDHelper.class.getSimpleName());
 
     // Media IDs used on browseable items of MediaBrowser
     public static final String MEDIA_ID_ROOT = "__ROOT__";

@@ -32,7 +32,7 @@ import static com.example.android.mediabrowserservice.utils.MediaIDHelper.MEDIA_
  */
 public class QueueHelper {
 
-    private static final String TAG = "QueueHelper";
+    private static final String TAG = LogHelper.makeLogTag(QueueHelper.class.getSimpleName());
 
     public static final List<MediaSession.QueueItem> getPlayingQueue(String mediaId,
             MusicProvider musicProvider) {

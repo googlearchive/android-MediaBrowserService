@@ -48,8 +48,8 @@ import java.io.IOException;
  * MediaSession. Maintaining a visible notification (usually) guarantees that the music service
  * won't be killed during playback.
  */
-public class MediaNotification extends BroadcastReceiver {
-    private static final String TAG = "MediaNotification";
+public class MediaNotificationManager extends BroadcastReceiver {
+    private static final String TAG = LogHelper.makeLogTag(MediaNotificationManager.class.getSimpleName());
 
     private static final int NOTIFICATION_ID = 412;
 
@@ -75,12 +75,11 @@ public class MediaNotification extends BroadcastReceiver {
 
     private PendingIntent mPauseIntent, mPlayIntent, mPreviousIntent, mNextIntent;
 
-    private String mCurrentAlbumArt;
     private int mNotificationColor;
 
     private boolean mStarted = false;
 
-    public MediaNotification(MusicService service) {
+    public MediaNotificationManager(MusicService service) {
         mService = service;
         updateSessionToken();
 

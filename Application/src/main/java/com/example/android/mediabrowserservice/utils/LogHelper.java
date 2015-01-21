@@ -17,13 +17,33 @@ package com.example.android.mediabrowserservice.utils;
 
 import android.util.Log;
 
+import com.example.android.mediabrowserservice.BuildConfig;
+
 public class LogHelper {
+    private static final String LOG_PREFIX = "sample_";
+    private static final int LOG_PREFIX_LENGTH = LOG_PREFIX.length();
+    private static final int MAX_LOG_TAG_LENGTH = 23;
+
+    public static String makeLogTag(String str) {
+        if (str.length() > MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH) {
+            return LOG_PREFIX + str.substring(0, MAX_LOG_TAG_LENGTH - LOG_PREFIX_LENGTH - 1);
+        }
+
+        return LOG_PREFIX + str;
+    }
+
     public static void v(String tag, Object... messages) {
-        log(tag, Log.VERBOSE, null, messages);
+        // Only log VERBOSE if build type is DEBUG
+        if (BuildConfig.DEBUG) {
+            log(tag, Log.VERBOSE, null, messages);
+        }
     }
 
     public static void d(String tag, Object... messages) {
-        log(tag, Log.DEBUG, null, messages);
+        // Only log DEBUG if build type is DEBUG
+        if (BuildConfig.DEBUG) {
+            log(tag, Log.DEBUG, null, messages);
+        }
     }
 
     public static void i(String tag, Object... messages) {

@@ -26,12 +26,15 @@ import android.os.Process;
 import android.util.Base64;
 import android.util.Log;
 
+import com.example.android.mediabrowserservice.utils.LogHelper;
+
 /**
  * Validates that the calling package is authorized to use this
  * {@link android.service.media.MediaBrowserService}.
  */
 public class PackageValidator {
-    public static final String TAG = "PackageValidator";
+
+    private static final String TAG = LogHelper.makeLogTag(PackageValidator.class.getSimpleName());
 
     // Replace with your package whitelist
     static final byte[][] VALID_PUBLIC_SIGNATURES = new byte[][]{

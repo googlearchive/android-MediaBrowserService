@@ -113,7 +113,7 @@ import static com.example.android.mediabrowserservice.utils.MediaIDHelper.extrac
 public class MusicService extends MediaBrowserService implements OnPreparedListener,
         OnCompletionListener, OnErrorListener, AudioManager.OnAudioFocusChangeListener {
 
-    private static final String TAG = "MusicService";
+    private static final String TAG = LogHelper.makeLogTag(MusicService.class.getSimpleName());
 
     // Action to thumbs up a media item
     private static final String CUSTOM_ACTION_THUMBS_UP = "thumbs_up";
@@ -146,7 +146,7 @@ public class MusicService extends MediaBrowserService implements OnPreparedListe
     // to prevent the device from shutting off the Wifi radio
     private WifiLock mWifiLock;
 
-    private MediaNotification mMediaNotification;
+    private MediaNotificationManager mMediaNotificationManager;
 
     // Indicates whether the service was started.
     private boolean mServiceStarted;
@@ -231,7 +231,7 @@ public class MusicService extends MediaBrowserService implements OnPreparedListe
 
         updatePlaybackState(null);
 
-        mMediaNotification = new MediaNotification(this);
+        mMediaNotificationManager = new MediaNotificationManager(this);
     }
 
     /*
@@ -665,7 +665,7 @@ public class MusicService extends MediaBrowserService implements OnPreparedListe
         giveUpAudioFocus();
         updatePlaybackState(withError);
 
-        mMediaNotification.stopNotification();
+        mMediaNotificationManager.stopNotification();
 
         // service is no longer necessary. Will be started again if needed.
         stopSelf();
@@ -869,7 +869,7 @@ public class MusicService extends MediaBrowserService implements OnPreparedListe
         mSession.setPlaybackState(stateBuilder.build());
 
         if (mState == PlaybackState.STATE_PLAYING || mState == PlaybackState.STATE_PAUSED) {
-            mMediaNotification.startNotification();
+            mMediaNotificationManager.startNotification();
         }
     }
 
