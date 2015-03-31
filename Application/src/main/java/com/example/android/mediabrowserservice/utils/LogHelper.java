@@ -20,6 +20,7 @@ import android.util.Log;
 import com.example.android.mediabrowserservice.BuildConfig;
 
 public class LogHelper {
+
     private static final String LOG_PREFIX = "sample_";
     private static final int LOG_PREFIX_LENGTH = LOG_PREFIX.length();
     private static final int MAX_LOG_TAG_LENGTH = 23;
@@ -31,6 +32,14 @@ public class LogHelper {
 
         return LOG_PREFIX + str;
     }
+
+    /**
+     * Don't use this when obfuscating class names!
+     */
+    public static String makeLogTag(Class cls) {
+        return makeLogTag(cls.getSimpleName());
+    }
+
 
     public static void v(String tag, Object... messages) {
         // Only log VERBOSE if build type is DEBUG
@@ -67,13 +76,14 @@ public class LogHelper {
     }
 
     public static void log(String tag, int level, Throwable t, Object... messages) {
-        if (messages != null && Log.isLoggable(tag, level)) {
+        if (Log.isLoggable(tag, level)) {
             String message;
-            if (messages.length == 1) {
-                message = messages[0] == null ? null : messages[0].toString();
+            if (t == null && messages != null && messages.length == 1) {
+                // handle this common case without the extra cost of creating a stringbuffer:
+                message = messages[0].toString();
             } else {
                 StringBuilder sb = new StringBuilder();
-                for (Object m: messages) {
+                if (messages != null) for (Object m : messages) {
                     sb.append(m);
                 }
                 if (t != null) {
