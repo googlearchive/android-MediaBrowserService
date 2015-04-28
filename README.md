@@ -71,8 +71,8 @@ To make it compatible with Android Auto, you also need to:
 Pre-requisites
 --------------
 
-- Android SDK v21
-- Android Build Tools v21.1.2
+- Android SDK v22
+- Android Build Tools v22.0.1
 - Android Support Repository
 
 Screenshots
