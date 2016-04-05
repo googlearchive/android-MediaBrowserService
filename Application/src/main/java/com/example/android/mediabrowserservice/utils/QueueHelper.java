@@ -17,7 +17,8 @@
 package com.example.android.mediabrowserservice.utils;
 
 import android.media.MediaMetadata;
-import android.media.session.MediaSession;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaSessionCompat;
 
 import com.example.android.mediabrowserservice.model.MusicProvider;
 
@@ -36,7 +37,7 @@ public class QueueHelper {
 
     private static final String TAG = LogHelper.makeLogTag(QueueHelper.class);
 
-    public static List<MediaSession.QueueItem> getPlayingQueue(String mediaId,
+    public static List<MediaSessionCompat.QueueItem> getPlayingQueue(String mediaId,
             MusicProvider musicProvider) {
 
         // extract the browsing hierarchy from the media ID:
@@ -51,7 +52,7 @@ public class QueueHelper {
         String categoryValue = hierarchy[1];
         LogHelper.d(TAG, "Creating playing queue for ", categoryType, ",  ", categoryValue);
 
-        Iterable<MediaMetadata> tracks = null;
+        Iterable<MediaMetadataCompat> tracks = null;
         // This sample only supports genre and by_search category types.
         if (categoryType.equals(MEDIA_ID_MUSICS_BY_GENRE)) {
             tracks = musicProvider.getMusicsByGenre(categoryValue);
@@ -67,7 +68,7 @@ public class QueueHelper {
         return convertToQueue(tracks, hierarchy[0], hierarchy[1]);
     }
 
-    public static List<MediaSession.QueueItem> getPlayingQueueFromSearch(String query,
+    public static List<MediaSessionCompat.QueueItem> getPlayingQueueFromSearch(String query,
             MusicProvider musicProvider) {
 
         LogHelper.d(TAG, "Creating playing queue for musics from search ", query);
@@ -76,10 +77,10 @@ public class QueueHelper {
     }
 
 
-    public static int getMusicIndexOnQueue(Iterable<MediaSession.QueueItem> queue,
+    public static int getMusicIndexOnQueue(Iterable<MediaSessionCompat.QueueItem> queue,
              String mediaId) {
         int index = 0;
-        for (MediaSession.QueueItem item : queue) {
+        for (MediaSessionCompat.QueueItem item : queue) {
             if (mediaId.equals(item.getDescription().getMediaId())) {
                 return index;
             }
@@ -88,10 +89,10 @@ public class QueueHelper {
         return -1;
     }
 
-    public static int getMusicIndexOnQueue(Iterable<MediaSession.QueueItem> queue,
+    public static int getMusicIndexOnQueue(Iterable<MediaSessionCompat.QueueItem> queue,
              long queueId) {
         int index = 0;
-        for (MediaSession.QueueItem item : queue) {
+        for (MediaSessionCompat.QueueItem item : queue) {
             if (queueId == item.getQueueId()) {
                 return index;
             }
@@ -100,24 +101,24 @@ public class QueueHelper {
         return -1;
     }
 
-    private static List<MediaSession.QueueItem> convertToQueue(
-            Iterable<MediaMetadata> tracks, String... categories) {
-        List<MediaSession.QueueItem> queue = new ArrayList<>();
+    private static List<MediaSessionCompat.QueueItem> convertToQueue(
+            Iterable<MediaMetadataCompat> tracks, String... categories) {
+        List<MediaSessionCompat.QueueItem> queue = new ArrayList<>();
         int count = 0;
-        for (MediaMetadata track : tracks) {
+        for (MediaMetadataCompat track : tracks) {
 
             // We create a hierarchy-aware mediaID, so we know what the queue is about by looking
             // at the QueueItem media IDs.
             String hierarchyAwareMediaID = MediaIDHelper.createMediaID(
                     track.getDescription().getMediaId(), categories);
 
-            MediaMetadata trackCopy = new MediaMetadata.Builder(track)
+            MediaMetadataCompat trackCopy = new MediaMetadataCompat.Builder(track)
                     .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
                     .build();
 
             // We don't expect queues to change after created, so we use the item index as the
             // queueId. Any other number unique in the queue would work.
-            MediaSession.QueueItem item = new MediaSession.QueueItem(
+            MediaSessionCompat.QueueItem item = new MediaSessionCompat.QueueItem(
                     trackCopy.getDescription(), count++);
             queue.add(item);
         }
@@ -132,18 +133,18 @@ public class QueueHelper {
      * @param musicProvider the provider used for fetching music.
      * @return list containing {@link android.media.session.MediaSession.QueueItem}'s
      */
-    public static List<MediaSession.QueueItem> getRandomQueue(MusicProvider musicProvider) {
+    public static List<MediaSessionCompat.QueueItem> getRandomQueue(MusicProvider musicProvider) {
         Iterator<String> genres = musicProvider.getGenres().iterator();
         if (!genres.hasNext()) {
             return Collections.emptyList();
         }
         String genre = genres.next();
-        Iterable<MediaMetadata> tracks = musicProvider.getMusicsByGenre(genre);
+        Iterable<MediaMetadataCompat> tracks = musicProvider.getMusicsByGenre(genre);
 
         return convertToQueue(tracks, MEDIA_ID_MUSICS_BY_GENRE, genre);
     }
 
-    public static boolean isIndexPlayable(int index, List<MediaSession.QueueItem> queue) {
+    public static boolean isIndexPlayable(int index, List<MediaSessionCompat.QueueItem> queue) {
         return (queue != null && index >= 0 && index < queue.size());
     }
 }

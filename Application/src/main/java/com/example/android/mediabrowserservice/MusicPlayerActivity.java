@@ -15,14 +15,14 @@
  */
 package com.example.android.mediabrowserservice;
 
-import android.app.Activity;
-import android.media.browse.MediaBrowser;
 import android.os.Bundle;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v7.app.AppCompatActivity;
 
 /**
  * Main activity for the music player.
  */
-public class MusicPlayerActivity extends Activity
+public class MusicPlayerActivity extends AppCompatActivity
         implements BrowseFragment.FragmentDataHelper {
 
     @Override
@@ -30,23 +30,23 @@ public class MusicPlayerActivity extends Activity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_player);
         if (savedInstanceState == null) {
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, BrowseFragment.newInstance(null))
                     .commit();
         }
     }
 
     @Override
-    public void onMediaItemSelected(MediaBrowser.MediaItem item) {
+    public void onMediaItemSelected(MediaBrowserCompat.MediaItem item) {
         if (item.isPlayable()) {
-            getMediaController().getTransportControls().playFromMediaId(item.getMediaId(), null);
+            getSupportMediaController().getTransportControls().playFromMediaId(item.getMediaId(), null);
             QueueFragment queueFragment = QueueFragment.newInstance();
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, queueFragment)
                     .addToBackStack(null)
                     .commit();
         } else if (item.isBrowsable()) {
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, BrowseFragment.newInstance(item.getMediaId()))
                     .addToBackStack(null)
                     .commit();

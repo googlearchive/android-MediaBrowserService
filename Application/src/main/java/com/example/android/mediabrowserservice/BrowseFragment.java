@@ -15,12 +15,15 @@
  */
 package com.example.android.mediabrowserservice;
 
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.media.browse.MediaBrowser;
-import android.media.session.MediaController;
 import android.os.Bundle;
+import android.os.RemoteException;
+import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaControllerCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -51,23 +54,23 @@ public class BrowseFragment extends Fragment {
 
     public static final String ARG_MEDIA_ID = "media_id";
 
-    public static interface FragmentDataHelper {
-        void onMediaItemSelected(MediaBrowser.MediaItem item);
+    public interface FragmentDataHelper {
+        void onMediaItemSelected(MediaBrowserCompat.MediaItem item);
     }
 
     // The mediaId to be used for subscribing for children using the MediaBrowser.
     private String mMediaId;
 
-    private MediaBrowser mMediaBrowser;
+    private MediaBrowserCompat mMediaBrowser;
     private BrowseAdapter mBrowserAdapter;
 
-    private MediaBrowser.SubscriptionCallback mSubscriptionCallback = new MediaBrowser.SubscriptionCallback() {
+    private MediaBrowserCompat.SubscriptionCallback mSubscriptionCallback = new MediaBrowserCompat.SubscriptionCallback() {
 
         @Override
-        public void onChildrenLoaded(String parentId, List<MediaBrowser.MediaItem> children) {
+        public void onChildrenLoaded(String parentId, List<MediaBrowserCompat.MediaItem> children) {
             mBrowserAdapter.clear();
             mBrowserAdapter.notifyDataSetInvalidated();
-            for (MediaBrowser.MediaItem item : children) {
+            for (MediaBrowserCompat.MediaItem item : children) {
                 mBrowserAdapter.add(item);
             }
             mBrowserAdapter.notifyDataSetChanged();
@@ -80,8 +83,8 @@ public class BrowseFragment extends Fragment {
         }
     };
 
-    private MediaBrowser.ConnectionCallback mConnectionCallback =
-            new MediaBrowser.ConnectionCallback() {
+    private MediaBrowserCompat.ConnectionCallback mConnectionCallback =
+            new MediaBrowserCompat.ConnectionCallback() {
         @Override
         public void onConnected() {
             LogHelper.d(TAG, "onConnected: session token " + mMediaBrowser.getSessionToken());
@@ -93,9 +96,14 @@ public class BrowseFragment extends Fragment {
             if (mMediaBrowser.getSessionToken() == null) {
                 throw new IllegalArgumentException("No Session token");
             }
-            MediaController mediaController = new MediaController(getActivity(),
-                    mMediaBrowser.getSessionToken());
-            getActivity().setMediaController(mediaController);
+            MediaControllerCompat mediaController = null;
+            try {
+                mediaController = new MediaControllerCompat(getActivity(),
+						mMediaBrowser.getSessionToken());
+                getActivity().setSupportMediaController(mediaController);
+            } catch (RemoteException e) {
+                Log.e(TAG, "", e);
+            }
         }
 
         @Override
@@ -106,7 +114,7 @@ public class BrowseFragment extends Fragment {
         @Override
         public void onConnectionSuspended() {
             LogHelper.d(TAG, "onConnectionSuspended");
-            getActivity().setMediaController(null);
+            getActivity().setSupportMediaController(null);
         }
     };
 
@@ -133,7 +141,7 @@ public class BrowseFragment extends Fragment {
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                MediaBrowser.MediaItem item = mBrowserAdapter.getItem(position);
+                MediaBrowserCompat.MediaItem item = mBrowserAdapter.getItem(position);
                 try {
                     FragmentDataHelper listener = (FragmentDataHelper) getActivity();
                     listener.onMediaItemSelected(item);
@@ -146,7 +154,7 @@ public class BrowseFragment extends Fragment {
         Bundle args = getArguments();
         mMediaId = args.getString(ARG_MEDIA_ID, null);
 
-        mMediaBrowser = new MediaBrowser(getActivity(),
+        mMediaBrowser = new MediaBrowserCompat(getActivity(),
                 new ComponentName(getActivity(), MusicService.class),
                 mConnectionCallback, null);
 
@@ -166,10 +174,10 @@ public class BrowseFragment extends Fragment {
     }
 
     // An adapter for showing the list of browsed MediaItem's
-    private static class BrowseAdapter extends ArrayAdapter<MediaBrowser.MediaItem> {
+    private static class BrowseAdapter extends ArrayAdapter<MediaBrowserCompat.MediaItem> {
 
         public BrowseAdapter(Context context) {
-            super(context, R.layout.media_list_item, new ArrayList<MediaBrowser.MediaItem>());
+            super(context, R.layout.media_list_item, new ArrayList<MediaBrowserCompat.MediaItem>());
         }
 
         static class ViewHolder {
@@ -196,12 +204,11 @@ public class BrowseFragment extends Fragment {
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            MediaBrowser.MediaItem item = getItem(position);
+            MediaBrowserCompat.MediaItem item = getItem(position);
             holder.mTitleView.setText(item.getDescription().getTitle());
             holder.mDescriptionView.setText(item.getDescription().getDescription());
             if (item.isPlayable()) {
-                holder.mImageView.setImageDrawable(
-                        getContext().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                holder.mImageView.setImageDrawable(ContextCompat.getDrawable(getContext(), R.drawable.ic_play_arrow_white_24dp));
                 holder.mImageView.setVisibility(View.VISIBLE);
             }
             return convertView;
