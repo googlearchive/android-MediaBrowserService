@@ -17,6 +17,7 @@
 package com.example.android.mediabrowserservice;
 
  import android.app.PendingIntent;
+ import android.content.ComponentName;
  import android.content.Context;
  import android.content.Intent;
  import android.graphics.Bitmap;
@@ -151,7 +152,7 @@ package com.example.android.mediabrowserservice;
          mPackageValidator = new PackageValidator(this);
 
          // Start a new MediaSession
-         mSession = new MediaSessionCompat(this, "MusicService");
+         mSession = new MediaSessionCompat(this, "MusicService", new ComponentName(this, MediaNotificationManager.class), null);
          setSessionToken(mSession.getSessionToken());
          mSession.setCallback(new MediaSessionCallback());
          mSession.setFlags(MediaSessionCompat.FLAG_HANDLES_MEDIA_BUTTONS |

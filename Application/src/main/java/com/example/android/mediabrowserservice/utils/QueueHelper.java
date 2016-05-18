@@ -16,7 +16,6 @@
 
 package com.example.android.mediabrowserservice.utils;
 
-import android.media.MediaMetadata;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaSessionCompat;
 
@@ -113,7 +112,7 @@ public class QueueHelper {
                     track.getDescription().getMediaId(), categories);
 
             MediaMetadataCompat trackCopy = new MediaMetadataCompat.Builder(track)
-                    .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
+                    .putString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID, hierarchyAwareMediaID)
                     .build();
 
             // We don't expect queues to change after created, so we use the item index as the
