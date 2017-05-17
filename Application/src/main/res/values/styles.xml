@@ -15,10 +15,14 @@
   limitations under the License.
 -->
 <resources>
-    <style name="AppTheme" parent="android:Theme.Material">
-        <item name="android:colorPrimary">#ffff5722</item>
-        <item name="android:colorPrimaryDark">#ffbf360c</item>
-        <item name="android:colorAccent">#ffff5722</item>
+    <color name="colorPrimary">#ffff5722</color>
+    <color name="colorPrimaryDark">#ffbf360c</color>
+    <color name="colorAccent">#ffff5722</color>
+
+    <style name="AppTheme" parent="Theme.AppCompat">
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
     </style>
 
     <style name="CarTheme" parent="AppTheme">
@@ -28,14 +32,14 @@
              - Notification icon badge tinting
              - Overview “now playing” icon tinting
          -->
-        <item name="android:colorPrimaryDark">#ffbf360c</item>
+        <item name="colorPrimaryDark">#ffbf360c</item>
 
         <!-- colorAccent is used in Android Auto for:
              - Spinner
              - progress bar
              - floating action button background (Play/Pause in media apps)
          -->
-        <item name="android:colorAccent">#ffff5722</item>
+        <item name="colorAccent">#ffff5722</item>
     </style>
 
 </resources>

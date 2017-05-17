@@ -15,12 +15,17 @@
  */
 package com.example.android.mediabrowserservice;
 
-import android.app.Fragment;
 import android.content.ComponentName;
 import android.content.Context;
-import android.media.browse.MediaBrowser;
-import android.media.session.MediaController;
 import android.os.Bundle;
+import android.os.RemoteException;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
+import android.support.v4.app.Fragment;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.MediaMetadataCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v4.media.session.PlaybackStateCompat;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,8 +37,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.example.android.mediabrowserservice.utils.LogHelper;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,74 +44,105 @@ import java.util.List;
  * A Fragment that lists all the various browsable queues available
  * from a {@link android.service.media.MediaBrowserService}.
  * <p/>
- * It uses a {@link MediaBrowser} to connect to the {@link MusicService}. Once connected,
- * the fragment subscribes to get all the children. All {@link MediaBrowser.MediaItem}'s
+ * It uses a {@link MediaBrowserCompat} to connect to the {@link MusicService}. Once connected,
+ * the fragment subscribes to get all the children. All {@link MediaBrowserCompat.MediaItem}'s
  * that can be browsed are shown in a ListView.
  */
 public class BrowseFragment extends Fragment {
 
-    private static final String TAG = LogHelper.makeLogTag(BrowseFragment.class.getSimpleName());
+    private static final String TAG = BrowseFragment.class.getSimpleName();
 
     public static final String ARG_MEDIA_ID = "media_id";
 
-    public static interface FragmentDataHelper {
-        void onMediaItemSelected(MediaBrowser.MediaItem item);
+    /**
+     * Interface between BrowseFragment and MusicPlayerActivity.
+     */
+    public interface FragmentDataHelper {
+        void onMediaItemSelected(MediaBrowserCompat.MediaItem item, boolean isPlaying);
     }
 
     // The mediaId to be used for subscribing for children using the MediaBrowser.
     private String mMediaId;
 
-    private MediaBrowser mMediaBrowser;
+    private MediaBrowserCompat mMediaBrowser;
     private BrowseAdapter mBrowserAdapter;
 
-    private MediaBrowser.SubscriptionCallback mSubscriptionCallback = new MediaBrowser.SubscriptionCallback() {
+    private MediaBrowserCompat.SubscriptionCallback mSubscriptionCallback =
+            new MediaBrowserCompat.SubscriptionCallback() {
 
-        @Override
-        public void onChildrenLoaded(String parentId, List<MediaBrowser.MediaItem> children) {
-            mBrowserAdapter.clear();
-            mBrowserAdapter.notifyDataSetInvalidated();
-            for (MediaBrowser.MediaItem item : children) {
-                mBrowserAdapter.add(item);
-            }
-            mBrowserAdapter.notifyDataSetChanged();
-        }
+                @Override
+                public void onChildrenLoaded(String parentId,
+                                             List<MediaBrowserCompat.MediaItem> children) {
+                    mBrowserAdapter.clear();
+                    mBrowserAdapter.notifyDataSetInvalidated();
+                    for (MediaBrowserCompat.MediaItem item : children) {
+                        mBrowserAdapter.add(item);
+                    }
+                    mBrowserAdapter.notifyDataSetChanged();
+                }
 
-        @Override
-        public void onError(String id) {
-            Toast.makeText(getActivity(), R.string.error_loading_media,
-                    Toast.LENGTH_LONG).show();
-        }
-    };
+                @Override
+                public void onError(String id) {
+                    Toast.makeText(getActivity(), R.string.error_loading_media,
+                            Toast.LENGTH_LONG).show();
+                }
+            };
 
-    private MediaBrowser.ConnectionCallback mConnectionCallback =
-            new MediaBrowser.ConnectionCallback() {
-        @Override
-        public void onConnected() {
-            LogHelper.d(TAG, "onConnected: session token " + mMediaBrowser.getSessionToken());
+    private MediaBrowserCompat.ConnectionCallback mConnectionCallback =
+            new MediaBrowserCompat.ConnectionCallback() {
+                @Override
+                public void onConnected() {
+                    Log.d(TAG, "onConnected: session token " + mMediaBrowser.getSessionToken());
 
-            if (mMediaId == null) {
-                mMediaId = mMediaBrowser.getRoot();
-            }
-            mMediaBrowser.subscribe(mMediaId, mSubscriptionCallback);
-            if (mMediaBrowser.getSessionToken() == null) {
-                throw new IllegalArgumentException("No Session token");
-            }
-            MediaController mediaController = new MediaController(getActivity(),
-                    mMediaBrowser.getSessionToken());
-            getActivity().setMediaController(mediaController);
-        }
+                    if (mMediaId == null) {
+                        mMediaId = mMediaBrowser.getRoot();
+                    }
+                    mMediaBrowser.subscribe(mMediaId, mSubscriptionCallback);
+                    try {
+                        MediaControllerCompat mediaController =
+                                new MediaControllerCompat(getActivity(),
+                                        mMediaBrowser.getSessionToken());
+                        MediaControllerCompat.setMediaController(getActivity(), mediaController);
 
-        @Override
-        public void onConnectionFailed() {
-            LogHelper.d(TAG, "onConnectionFailed");
-        }
+                        // Register a Callback to stay in sync
+                        mediaController.registerCallback(mControllerCallback);
+                    } catch (RemoteException e) {
+                        Log.e(TAG, "Failed to connect to MediaController", e);
+                    }
+                }
 
-        @Override
-        public void onConnectionSuspended() {
-            LogHelper.d(TAG, "onConnectionSuspended");
-            getActivity().setMediaController(null);
-        }
-    };
+                @Override
+                public void onConnectionFailed() {
+                    Log.e(TAG, "onConnectionFailed");
+                }
+
+                @Override
+                public void onConnectionSuspended() {
+                    Log.d(TAG, "onConnectionSuspended");
+                    MediaControllerCompat mediaController = MediaControllerCompat
+                            .getMediaController(getActivity());
+                    if (mediaController != null) {
+                        mediaController.unregisterCallback(mControllerCallback);
+                        MediaControllerCompat.setMediaController(getActivity(), null);
+                    }
+                }
+            };
+
+    private MediaControllerCompat.Callback mControllerCallback =
+            new MediaControllerCompat.Callback() {
+                @Override
+                public void onMetadataChanged(MediaMetadataCompat metadata) {
+                    if (metadata != null) {
+                        mBrowserAdapter.setCurrentMediaMetadata(metadata);
+                    }
+                }
+
+                @Override
+                public void onPlaybackStateChanged(PlaybackStateCompat state) {
+                    mBrowserAdapter.setPlaybackState(state);
+                    mBrowserAdapter.notifyDataSetChanged();
+                }
+            };
 
     public static BrowseFragment newInstance(String mediaId) {
         Bundle args = new Bundle();
@@ -125,18 +159,16 @@ public class BrowseFragment extends Fragment {
 
         mBrowserAdapter = new BrowseAdapter(getActivity());
 
-        View controls = rootView.findViewById(R.id.controls);
-        controls.setVisibility(View.GONE);
-
         ListView listView = (ListView) rootView.findViewById(R.id.list_view);
         listView.setAdapter(mBrowserAdapter);
         listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                MediaBrowser.MediaItem item = mBrowserAdapter.getItem(position);
+                MediaBrowserCompat.MediaItem item = mBrowserAdapter.getItem(position);
+                boolean isPlaying = item.getMediaId().equals(mBrowserAdapter.getPlayingMediaId());
                 try {
                     FragmentDataHelper listener = (FragmentDataHelper) getActivity();
-                    listener.onMediaItemSelected(item);
+                    listener.onMediaItemSelected(item, isPlaying);
                 } catch (ClassCastException ex) {
                     Log.e(TAG, "Exception trying to cast to FragmentDataHelper", ex);
                 }
@@ -146,7 +178,7 @@ public class BrowseFragment extends Fragment {
         Bundle args = getArguments();
         mMediaId = args.getString(ARG_MEDIA_ID, null);
 
-        mMediaBrowser = new MediaBrowser(getActivity(),
+        mMediaBrowser = new MediaBrowserCompat(getActivity(),
                 new ComponentName(getActivity(), MusicService.class),
                 mConnectionCallback, null);
 
@@ -166,10 +198,29 @@ public class BrowseFragment extends Fragment {
     }
 
     // An adapter for showing the list of browsed MediaItem's
-    private static class BrowseAdapter extends ArrayAdapter<MediaBrowser.MediaItem> {
+    private static class BrowseAdapter extends ArrayAdapter<MediaBrowserCompat.MediaItem> {
+        private String mCurrentMediaId;
+        private PlaybackStateCompat mPlaybackState;
 
         public BrowseAdapter(Context context) {
-            super(context, R.layout.media_list_item, new ArrayList<MediaBrowser.MediaItem>());
+            super(context, R.layout.media_list_item, new ArrayList<MediaBrowserCompat.MediaItem>());
+        }
+
+        @Nullable
+        public String getPlayingMediaId() {
+            boolean isPlaying = mPlaybackState != null
+                    && mPlaybackState.getState() == PlaybackStateCompat.STATE_PLAYING;
+            return isPlaying ? mCurrentMediaId : null;
+        }
+
+        private void setCurrentMediaMetadata(MediaMetadataCompat mediaMetadata) {
+            mCurrentMediaId = mediaMetadata != null
+                    ? mediaMetadata.getString(MediaMetadataCompat.METADATA_KEY_MEDIA_ID)
+                    : null;
+        }
+
+        private void setPlaybackState(PlaybackStateCompat playbackState) {
+            mPlaybackState = playbackState;
         }
 
         static class ViewHolder {
@@ -178,8 +229,9 @@ public class BrowseFragment extends Fragment {
             TextView mDescriptionView;
         }
 
+        @NonNull
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, @NonNull ViewGroup parent) {
 
             ViewHolder holder;
 
@@ -196,15 +248,19 @@ public class BrowseFragment extends Fragment {
                 holder = (ViewHolder) convertView.getTag();
             }
 
-            MediaBrowser.MediaItem item = getItem(position);
+            MediaBrowserCompat.MediaItem item = getItem(position);
             holder.mTitleView.setText(item.getDescription().getTitle());
             holder.mDescriptionView.setText(item.getDescription().getDescription());
             if (item.isPlayable()) {
-                holder.mImageView.setImageDrawable(
-                        getContext().getDrawable(R.drawable.ic_play_arrow_white_24dp));
+                int playRes = item.getMediaId().equals(getPlayingMediaId())
+                        ? R.drawable.ic_equalizer_white_24dp
+                        : R.drawable.ic_play_arrow_white_24dp;
+                holder.mImageView.setImageDrawable(getContext().getResources()
+                        .getDrawable(playRes));
                 holder.mImageView.setVisibility(View.VISIBLE);
             }
             return convertView;
         }
+
     }
 }

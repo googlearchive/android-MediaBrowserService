@@ -31,8 +31,8 @@
         android:layout_height="wrap_content"
         android:minHeight="?android:attr/listPreferredItemHeight"
         android:mode="twoLine"
-        android:padding="@dimen/list_item_padding"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:padding="@dimen/list_item_padding">
 
         <TextView
             android:id="@+id/title"

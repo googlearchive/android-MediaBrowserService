@@ -17,21 +17,38 @@
 package com.example.android.mediabrowserservice;
 
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.AsyncTask;
+import android.util.Log;
 import android.util.LruCache;
 
-import com.example.android.mediabrowserservice.utils.BitmapHelper;
-import com.example.android.mediabrowserservice.utils.LogHelper;
-
+import java.io.BufferedInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 
 /**
  * Implements a basic cache of album arts, with async loading support.
  */
 public final class AlbumArtCache {
-    private static final String TAG = LogHelper.makeLogTag(AlbumArtCache.class);
+    private static final String TAG = AlbumArtCache.class.getSimpleName();
 
-    private static final int MAX_ALBUM_ART_CACHE_SIZE = 12*1024*1024;  // 12 MB
+    /**
+     * Listener for downloading album art.
+     */
+    public abstract static class FetchListener {
+        public abstract void onFetched(String artUrl, Bitmap bigImage, Bitmap iconImage);
+
+        public void onError(String artUrl, Exception e) {
+            Log.e(TAG, "AlbumArtFetchListener: error while downloading " + artUrl, e);
+        }
+    }
+
+    // Max read limit that we allow our input stream to mark/reset.
+    private static final int MAX_READ_LIMIT_PER_IMG = 1024 * 1024;
+
+    private static final int MAX_ALBUM_ART_CACHE_SIZE = 12 * 1024 * 1024;  // 12 MB
     private static final int MAX_ART_WIDTH = 800;  // pixels
     private static final int MAX_ART_HEIGHT = 480;  // pixels
 
@@ -57,12 +74,12 @@ public final class AlbumArtCache {
         // Holds no more than MAX_ALBUM_ART_CACHE_SIZE bytes, bounded by maxmemory/4 and
         // Integer.MAX_VALUE:
         int maxSize = Math.min(MAX_ALBUM_ART_CACHE_SIZE,
-            (int) (Math.min(Integer.MAX_VALUE, Runtime.getRuntime().maxMemory()/4)));
+                (int) (Math.min(Integer.MAX_VALUE, Runtime.getRuntime().maxMemory() / 4)));
         mCache = new LruCache<String, Bitmap[]>(maxSize) {
             @Override
             protected int sizeOf(String key, Bitmap[] value) {
                 return value[BIG_BITMAP_INDEX].getByteCount()
-                    + value[ICON_BITMAP_INDEX].getByteCount();
+                        + value[ICON_BITMAP_INDEX].getByteCount();
             }
         };
     }
@@ -84,28 +101,25 @@ public final class AlbumArtCache {
         // a proper image loading library, like Glide.
         Bitmap[] bitmap = mCache.get(artUrl);
         if (bitmap != null) {
-            LogHelper.d(TAG, "getOrFetch: album art is in cache, using it", artUrl);
+            Log.d(TAG, "getOrFetch: album art is in cache, using it: " + artUrl);
             listener.onFetched(artUrl, bitmap[BIG_BITMAP_INDEX], bitmap[ICON_BITMAP_INDEX]);
             return;
         }
-        LogHelper.d(TAG, "getOrFetch: starting asynctask to fetch ", artUrl);
+        Log.d(TAG, "getOrFetch: starting asynctask to fetch " + artUrl);
 
         new AsyncTask<Void, Void, Bitmap[]>() {
             @Override
             protected Bitmap[] doInBackground(Void[] objects) {
                 Bitmap[] bitmaps;
                 try {
-                    Bitmap bitmap = BitmapHelper.fetchAndRescaleBitmap(artUrl,
-                        MAX_ART_WIDTH, MAX_ART_HEIGHT);
-                    Bitmap icon = BitmapHelper.scaleBitmap(bitmap,
-                        MAX_ART_WIDTH_ICON, MAX_ART_HEIGHT_ICON);
-                    bitmaps = new Bitmap[] {bitmap, icon};
+                    Bitmap bitmap = fetchAndRescaleBitmap(artUrl, MAX_ART_WIDTH, MAX_ART_HEIGHT);
+                    Bitmap icon = scaleBitmap(bitmap, MAX_ART_WIDTH_ICON, MAX_ART_HEIGHT_ICON);
+                    bitmaps = new Bitmap[]{bitmap, icon};
                     mCache.put(artUrl, bitmaps);
                 } catch (IOException e) {
                     return null;
                 }
-                LogHelper.d(TAG, "doInBackground: putting bitmap in cache. cache size=" +
-                    mCache.size());
+                Log.d(TAG, "doInBackground: putting bitmap in cache. cache size=" + mCache.size());
                 return bitmaps;
             }
 
@@ -115,16 +129,59 @@ public final class AlbumArtCache {
                     listener.onError(artUrl, new IllegalArgumentException("got null bitmaps"));
                 } else {
                     listener.onFetched(artUrl,
-                        bitmaps[BIG_BITMAP_INDEX], bitmaps[ICON_BITMAP_INDEX]);
+                            bitmaps[BIG_BITMAP_INDEX], bitmaps[ICON_BITMAP_INDEX]);
                 }
             }
         }.execute();
     }
 
-    public static abstract class FetchListener {
-        public abstract void onFetched(String artUrl, Bitmap bigImage, Bitmap iconImage);
-        public void onError(String artUrl, Exception e) {
-            LogHelper.e(TAG, e, "AlbumArtFetchListener: error while downloading " + artUrl);
+    private Bitmap scaleBitmap(Bitmap src, int maxWidth, int maxHeight) {
+        double scaleFactor = Math.min(
+                ((double) maxWidth) / src.getWidth(), ((double) maxHeight) / src.getHeight());
+        return Bitmap.createScaledBitmap(src,
+                (int) (src.getWidth() * scaleFactor), (int) (src.getHeight() * scaleFactor), false);
+    }
+
+    private Bitmap scaleBitmap(int scaleFactor, InputStream inputStream) {
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+
+        // Decode the image file into a Bitmap sized to fill the View
+        bitmapOptions.inJustDecodeBounds = false;
+        bitmapOptions.inSampleSize = scaleFactor;
+
+        return BitmapFactory.decodeStream(inputStream, null, bitmapOptions);
+    }
+
+    private int findScaleFactor(int targetWidth, int targetHeight, InputStream inputStream) {
+        // Get the dimensions of the bitmap
+        BitmapFactory.Options bitmapOptions = new BitmapFactory.Options();
+        bitmapOptions.inJustDecodeBounds = true;
+        BitmapFactory.decodeStream(inputStream, null, bitmapOptions);
+        int actualWidth = bitmapOptions.outWidth;
+        int actualHeight = bitmapOptions.outHeight;
+
+        // Determine how much to scale down the image
+        return Math.min(actualWidth / targetWidth, actualHeight / targetHeight);
+    }
+
+    private Bitmap fetchAndRescaleBitmap(String uri, int width, int height)
+            throws IOException {
+        URL url = new URL(uri);
+        BufferedInputStream inputStream = null;
+        try {
+            HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+            inputStream = new BufferedInputStream(urlConnection.getInputStream());
+            inputStream.mark(MAX_READ_LIMIT_PER_IMG);
+            int scaleFactor = findScaleFactor(width, height, inputStream);
+            Log.d(TAG, "Scaling bitmap " + uri + " by factor " + scaleFactor + " to support "
+                    + width + "x" + height + "requested dimension");
+            inputStream.reset();
+            return scaleBitmap(scaleFactor, inputStream);
+        } finally {
+            if (inputStream != null) {
+                inputStream.close();
+            }
         }
     }
 }

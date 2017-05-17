@@ -13,9 +13,9 @@ github:       android-MediaBrowserService
 level:        ADVANCED
 icon:         screenshots/icon-web.png
 apiRefs:
-    - android:android.service.media.MediaBrowserService
-    - android:android.media.browse.MediaBrowser
-    - android:android.media.session.MediaSession
-    - android:android.media.session.MediaController
-    - android:android.app.Notification.MediaStyle
+    - android:android.support.v4.media.MediaBrowserServiceCompat
+    - android:android.support.v4.media.MediaBrowserCompat
+    - android:android.support.v4.media.session.MediaSessionCompat
+    - android:android.support.v4.media.session.MediaControllerCompat
+    - android:android.support.v7.app.NotificationCompat.MediaStyle
 license: apache2

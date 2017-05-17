@@ -15,38 +15,43 @@
  */
 package com.example.android.mediabrowserservice;
 
-import android.app.Activity;
-import android.media.browse.MediaBrowser;
 import android.os.Bundle;
+import android.support.v4.media.MediaBrowserCompat;
+import android.support.v4.media.session.MediaControllerCompat;
+import android.support.v7.app.AppCompatActivity;
 
 /**
  * Main activity for the music player.
  */
-public class MusicPlayerActivity extends Activity
+public class MusicPlayerActivity extends AppCompatActivity
         implements BrowseFragment.FragmentDataHelper {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
         setContentView(R.layout.activity_player);
         if (savedInstanceState == null) {
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .add(R.id.container, BrowseFragment.newInstance(null))
                     .commit();
         }
     }
 
     @Override
-    public void onMediaItemSelected(MediaBrowser.MediaItem item) {
+    public void onMediaItemSelected(MediaBrowserCompat.MediaItem item, boolean isPlaying) {
         if (item.isPlayable()) {
-            getMediaController().getTransportControls().playFromMediaId(item.getMediaId(), null);
-            QueueFragment queueFragment = QueueFragment.newInstance();
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.container, queueFragment)
-                    .addToBackStack(null)
-                    .commit();
+            MediaControllerCompat controller = MediaControllerCompat.getMediaController(this);
+            MediaControllerCompat.TransportControls controls = controller.getTransportControls();
+
+            // If the item is playing, pause it, otherwise start it
+            if (isPlaying) {
+                controls.pause();
+            } else {
+                controls.playFromMediaId(item.getMediaId(), null);
+            }
         } else if (item.isBrowsable()) {
-            getFragmentManager().beginTransaction()
+            getSupportFragmentManager().beginTransaction()
                     .replace(R.id.container, BrowseFragment.newInstance(item.getMediaId()))
                     .addToBackStack(null)
                     .commit();
