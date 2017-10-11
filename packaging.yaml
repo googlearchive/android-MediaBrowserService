@@ -10,6 +10,6 @@ categories:   [None]
 languages:    [Java]
 solutions:    [Mobile]
 github:       googlesamples/android-MediaBrowserService
-level:        BEGINNER
-icon:         MediaBrowserServiceSample/src/main/res/drawable-xxhdpi/ic_launcher.png
+level:        ADVANCED
+icon:         MediaBrowserServiceSample/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
 license:      apache2-android

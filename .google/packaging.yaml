@@ -17,5 +17,5 @@ apiRefs:
     - android:android.support.v4.media.MediaBrowserCompat
     - android:android.support.v4.media.session.MediaSessionCompat
     - android:android.support.v4.media.session.MediaControllerCompat
-    - android:android.support.v7.app.NotificationCompat.MediaStyle
+    - android:android.support.v4.media.app.NotificationCompat.MediaStyle
 license: apache2

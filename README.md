@@ -2,16 +2,22 @@
 Android MediaBrowserService Sample
 ===================================
 
-This sample shows how to implement an audio media app that provides
-media library metadata and playback controls through a standard
-service. It exposes a simple music library through the new
-MediaBrowserService and provides MediaSession callbacks. This allows
-it to be used in Android Auto, for example.
-When not connected to a car, the app has a very simple UI that browses
-the media library and provides simple playback controls. When
-connected to Android Auto, the same service provides data and callback
-to the Android Auto UI in the same manner as it provides them to the
-local UI.
+This sample shows how to implement a media app that allows
+background playback of audio, and provide a media library
+that is exposed to other apps.
+1. It allows other apps control media playback externally
+using MediaSession. This allows playback to be controlled by
+the Google Assistant, for example.
+2. It exposes a simple music library through MediaBrowserService.
+And it provides MediaSession callbacks. This allows it to be used
+by Android Auto, for example.
+When not connected to a car, the app has a very simple UI that
+allows for playback as well as skip to previous and next tracks.
+To learn more about MediaSession and MediaBrowserService, read
+this [article on Medium](https://medium.com/google-developers/understanding-mediasession-part-4-4-dcc77c535f99)
+that goes into the architectural details of these APIs.
+
+<img src="screenshots/architecture.png" height="400" alt="Architecture Diagram"/>
 
 Introduction
 ------------
@@ -72,14 +78,14 @@ To make it compatible with Android Auto, you also need to:
 Pre-requisites
 --------------
 
-- Android SDK 25
-- Android Build Tools v25.0.3
+- Android SDK 26
+- Android Build Tools v26.0.1
 - Android Support Repository
 
 Screenshots
 -------------
 
-<img src="screenshots/1-main.png" height="400" alt="Screenshot"/> <img src="screenshots/2-music-play.png" height="400" alt="Screenshot"/> <img src="screenshots/3-music-notification.png" height="400" alt="Screenshot"/> 
+<img src="screenshots/1-main.png" height="400" alt="Screenshot"/> <img src="screenshots/2-notification.png" height="400" alt="Screenshot"/> 
 
 Getting Started
 ---------------
