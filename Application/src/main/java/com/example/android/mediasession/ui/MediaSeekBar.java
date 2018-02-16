@@ -71,8 +71,9 @@ public class MediaSeekBar extends AppCompatSeekBar {
     }
 
     @Override
-    public void setOnSeekBarChangeListener(OnSeekBarChangeListener l) {
+    public final void setOnSeekBarChangeListener(OnSeekBarChangeListener l) {
         // Prohibit adding seek listeners to this subclass.
+        throw new UnsupportedOperationException("Cannot add listeners to a MediaSeekBar");
     }
 
     public void setMediaController(final MediaControllerCompat mediaController) {

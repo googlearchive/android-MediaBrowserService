@@ -104,12 +104,14 @@ public class MusicService extends MediaBrowserServiceCompat {
         public void onAddQueueItem(MediaDescriptionCompat description) {
             mPlaylist.add(new MediaSessionCompat.QueueItem(description, description.hashCode()));
             mQueueIndex = (mQueueIndex == -1) ? 0 : mQueueIndex;
+            mSession.setQueue(mPlaylist);
         }
 
         @Override
         public void onRemoveQueueItem(MediaDescriptionCompat description) {
             mPlaylist.remove(new MediaSessionCompat.QueueItem(description, description.hashCode()));
             mQueueIndex = (mPlaylist.isEmpty()) ? -1 : mQueueIndex;
+            mSession.setQueue(mPlaylist);
         }
 
         @Override
